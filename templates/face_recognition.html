@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Recognition - CodeFormer Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-content">
+          <h1><i class="fas fa-magic"></i> CodeFormer Portal</h1>
+          <img src="{{ url_for('static', filename='images/sigmind.png') }}" alt="Sigmind Logo" class="header-logo">
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="nav-container">
+        <ul class="nav-tabs">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('landing') }}">
+              <i class="fas fa-home"></i>
+              Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'restoration' %}active{% endif %}" href="{{ url_for('index') }}">
+              <i class="fas fa-wand-magic-sparkles"></i>
+              Face Restoration
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'inpainting_drawing' %}active{% endif %}" href="{{ url_for('inpainting_drawing') }}">
+              <i class="fas fa-paintbrush"></i>
+              Inpainting/Drawing
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'comparison' %}active{% endif %}" href="{{ url_for('compare') }}">
+              <i class="fas fa-balance-scale"></i>
+              Face Comparison
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'video_enhancement' %}active{% endif %}" href="{{ url_for('video_enhancement') }}">
+              <i class="fas fa-video"></i>
+              Video Enhancement
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'face_recognition' %}active{% endif %}" href="{{ url_for('face_recognition') }}">
+              <i class="fas fa-search"></i>
+              Face Recognition
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <div class="page-header fade-in">
+          <h1 class="page-title">Face Recognition</h1>
+          <p class="page-subtitle">Search for faces in videos using reference images</p>
+        </div>
+
+        <div class="face-recognition-layout">
+          <!-- Left Panel: Reference Images -->
+          <div class="face-recognition-panel">
+            <h5 class="mb-3">
+              <i class="fas fa-images"></i>
+              Reference Images
+            </h5>
+            <div id="ref-preview"></div>
+          </div>
+
+          <!-- Center Panel: Video Preview and Controls -->
+          <div class="face-recognition-panel center-panel">
+            <h5 class="mb-3">
+              <i class="fas fa-video"></i>
+              Video Preview & Controls
+            </h5>
+            
+            <div class="video-container mb-4">
+              <video id="video-preview" class="video-player" controls style="display:none;"></video>
+            </div>
+
+            <div class="form-group">
+              <label for="video-input" class="form-label">
+                <i class="fas fa-film"></i>
+                Upload Video(s)
+              </label>
+              <div class="form-control-file" onclick="document.getElementById('video-input').click()">
+                <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                <p class="mb-1">Click to upload videos</p>
+                <p class="text-muted small">Supports: MP4, AVI, MOV</p>
+                <input type="file" id="video-input" accept="video/*" multiple style="display: none;">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="ref-input" class="form-label">
+                <i class="fas fa-user"></i>
+                Upload Reference Face Images
+              </label>
+              <div class="form-control-file" onclick="document.getElementById('ref-input').click()">
+                <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                <p class="mb-1">Click to upload reference images</p>
+                <p class="text-muted small">Supports: PNG, JPG, JPEG</p>
+                <input type="file" id="ref-input" accept="image/*" multiple style="display: none;">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="threshold-slider" class="form-label">
+                <i class="fas fa-sliders-h"></i>
+                Match Threshold
+              </label>
+              <div class="slider-container">
+                <div class="slider-label">
+                  <span>Less Strict</span>
+                  <span id="threshold-value">0.6</span>
+                </div>
+                <input type="range" id="threshold-slider" name="threshold" min="0" max="1" step="0.01" value="0.6" class="custom-range">
+                <div class="d-flex justify-between mt-1">
+                  <small class="text-muted">0.0</small>
+                  <small class="text-muted">1.0</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group text-center">
+              <button id="process-btn" class="btn btn-primary btn-lg">
+                <i class="fas fa-search"></i>
+                Start Processing
+              </button>
+            </div>
+
+            <div id="progress-container" class="progress-container" style="display: none;">
+              <div id="progress-bar" class="progress-bar">0%</div>
+            </div>
+
+            <div id="queue-table" class="table-container" style="display: none;"></div>
+            
+            <button id="reset-btn" class="btn btn-outline w-100 mt-3" style="display:none;">
+              <i class="fas fa-redo"></i>
+              Try Another Video
+            </button>
+          </div>
+
+          <!-- Right Panel: Results -->
+          <div class="face-recognition-panel results-panel">
+            <h5 class="mb-3">
+              <i class="fas fa-chart-bar"></i>
+              Detection Results
+            </h5>
+            <div id="results-container"></div>
+          </div>
+        </div>
+
+        <!-- Detected Faces Section -->
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-users"></i>
+                  All Detected Faces
+                </h3>
+                <p class="text-muted mb-0">All faces detected in the videos with timestamps</p>
+              </div>
+              <div class="card-body">
+                <div id="face-tiles" class="face-tiles-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-info-circle"></i>
+                  How to Use Face Recognition
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="text-center">
+                      <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                      <h6>1. Upload Videos</h6>
+                      <p class="text-muted small">Select one or more video files to search through</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="text-center">
+                      <i class="fas fa-user fa-2x text-secondary mb-2"></i>
+                      <h6>2. Add References</h6>
+                      <p class="text-muted small">Upload clear face images of people to search for</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="text-center">
+                      <i class="fas fa-sliders-h fa-2x text-warning mb-2"></i>
+                      <h6>3. Set Threshold</h6>
+                      <p class="text-muted small">Adjust sensitivity for face matching accuracy</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="text-center">
+                      <i class="fas fa-search fa-2x text-success mb-2"></i>
+                      <h6>4. Process & View</h6>
+                      <p class="text-muted small">Watch real-time results and download matches</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>Powered by <b>Sigmind.ai</b> | Advanced AI Face Recognition Technology</p>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script>
+    // DOM elements
+    const videoInput = document.getElementById('video-input');
+    const videoPreview = document.getElementById('video-preview');
+    const refInput = document.getElementById('ref-input');
+    const refPreview = document.getElementById('ref-preview');
+    const processBtn = document.getElementById('process-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const queueTableDiv = document.getElementById('queue-table');
+    const faceTilesDiv = document.getElementById('face-tiles');
+    const resultsContainer = document.getElementById('results-container');
+    const thresholdSlider = document.getElementById('threshold-slider');
+    const thresholdValue = document.getElementById('threshold-value');
+    let jobId = null;
+
+    // Update threshold display
+    thresholdSlider.addEventListener('input', function() {
+      thresholdValue.textContent = this.value;
+    });
+
+    // Video preview functionality
+    videoInput.addEventListener('change', function() {
+      const files = this.files;
+      if (files.length > 0) {
+        const url = URL.createObjectURL(files[0]);
+        videoPreview.src = url;
+        videoPreview.style.display = 'block';
+      }
+    });
+
+    // Reference images preview - show full images
+    refInput.addEventListener('change', function() {
+      let previewHTML = '';
+      const files = this.files;
+      for (let i = 0; i < files.length; i++) {
+        previewHTML += `<div class="preview-item">
+          <img src="${URL.createObjectURL(files[i])}" alt="Ref Image" style="object-fit: contain; max-height: 150px;">
+        </div>`;
+      }
+      refPreview.innerHTML = `<div class="section-title">All Selected (${files.length})</div><div class="preview-grid">${previewHTML}</div>`;
+    });
+
+    // Process button click
+    processBtn.addEventListener('click', function() {
+      if (!videoInput.files.length) {
+        alert('Please select at least one video file.');
+        return;
+      }
+      
+      const formData = new FormData();
+      for (let i = 0; i < videoInput.files.length; i++) {
+        formData.append('video', videoInput.files[i]);
+      }
+      formData.append('threshold', thresholdSlider.value);
+      const refFiles = refInput.files;
+      for (let i = 0; i < refFiles.length; i++) {
+        formData.append('references', refFiles[i]);
+      }
+      
+      // Disable inputs during processing
+      videoInput.disabled = true;
+      refInput.disabled = true;
+      processBtn.disabled = true;
+      progressContainer.style.display = 'block';
+      // Remove popup modal - show progress in existing queue instead
+
+      fetch('{{ url_for('start_processing') }}', { method: 'POST', body: formData })
+        .then(response => response.json())
+        .then(data => {
+          jobId = data.job_id;
+          updateReferencePreview(data.detectable, data.undetectable);
+          pollProgress();
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while starting processing');
+        });
+    });
+
+    // Update reference preview - show full images
+    function updateReferencePreview(detectable, undetectable) {
+      let html = '';
+      if (detectable.length) {
+        html += `<div class="section-title">✅ Detected (${detectable.length})</div><div class="preview-grid">`;
+        detectable.forEach(img => {
+          html += `<div class="preview-item"><img src="data:image/jpeg;base64,${img.image_base64}" alt="${img.filename}" style="object-fit: contain; max-height: 150px;"></div>`;
+        });
+        html += `</div>`;
+      }
+      if (undetectable.length) {
+        html += `<div class="section-title">❌ Undetectable (${undetectable.length})</div><div class="preview-grid">`;
+        undetectable.forEach(img => {
+          html += `<div class="preview-item"><img src="data:image/jpeg;base64,${img.image_base64}" alt="${img.filename}" style="object-fit: contain; max-height: 150px;"></div>`;
+        });
+        html += `</div>`;
+      }
+      refPreview.innerHTML = html;
+    }
+
+    // Poll progress
+    function pollProgress() {
+      fetch('{{ url_for('progress', job_id='') }}' + jobId)
+        .then(response => response.json())
+        .then(data => {
+          progressBar.style.width = data.progress + '%';
+          progressBar.textContent = data.progress + '%';
+          
+          if (data.current_video) {
+            videoPreview.src = '{{ url_for('uploaded_file', filename='') }}' + data.current_video;
+            videoPreview.style.display = 'block';
+          }
+          
+          updateQueueTable(data.video_status);
+          updateFaceTiles(data.face_tiles);
+          
+          if (data.progress < 100) {
+            setTimeout(pollProgress, 1000);
+          } else {
+            fetch('{{ url_for('result', job_id='') }}' + jobId)
+              .then(response => response.text())
+              .then(html => {
+                resultsContainer.innerHTML = html;
+                resetBtn.style.display = 'block';
+              });
+          }
+        })
+        .catch(error => {
+          console.error('Error polling progress:', error);
+        });
+    }
+
+    // Update queue table with real-time progress
+    function updateQueueTable(statusList) {
+      if (!statusList || statusList.length === 0) return;
+      
+      let html = '<table class="table"><thead><tr><th>Video</th><th>Progress</th><th>Status</th><th>Faces Detected</th></tr></thead><tbody>';
+      statusList.forEach(item => {
+        let progressText = (item.status === 'failed') ? '❌ Failed' : (item.progress + '%');
+        let statusClass = item.status === 'failed' ? 'text-danger' : (item.status === 'completed' ? 'text-success' : 'text-warning');
+        let statusIcon = item.status === 'failed' ? '❌' : (item.status === 'completed' ? '✅' : '🔄');
+        let facesCount = item.faces_detected || 0;
+        
+        html += `<tr>
+          <td><strong>${item.filename}</strong></td>
+          <td>
+            <div class="progress" style="height: 20px;">
+              <div class="progress-bar" role="progressbar" style="width: ${item.progress}%" aria-valuenow="${item.progress}" aria-valuemin="0" aria-valuemax="100">
+                ${progressText}
+              </div>
+            </div>
+          </td>
+          <td class="${statusClass}">${statusIcon} ${item.status}</td>
+          <td>${facesCount} faces</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      queueTableDiv.innerHTML = html;
+      queueTableDiv.style.display = 'block';
+    }
+
+    // Update face tiles - shows ALL detected faces with timestamps
+    function updateFaceTiles(faceTiles) {
+      if (!faceTiles || faceTiles.length === 0) {
+        faceTilesDiv.innerHTML = '<p class="text-muted text-center">No faces detected yet...</p>';
+        return;
+      }
+      
+      let html = '';
+      faceTiles.forEach(tile => {
+        const timestamp = formatTimestamp(tile.time);
+        const threshold = parseFloat(thresholdSlider.value);
+        const isMatch = tile.similarity && tile.similarity > threshold;
+        const matchClass = isMatch ? 'match-found' : '';
+        const similarityText = tile.similarity ? `${(tile.similarity * 100).toFixed(1)}%` : 'No match';
+        const similarityClass = isMatch ? 'face-similarity' : 'face-no-match';
+        
+        html += `<div class="face-tile ${matchClass}">
+          <img src="data:image/jpeg;base64,${tile.video_face}" alt="Face">
+          <div class="face-overlay">
+            <div class="face-info">
+              <div class="face-filename">${tile.video_filename}</div>
+              <div class="face-timestamp">${timestamp}</div>
+              <div class="${similarityClass}">${similarityText}</div>
+            </div>
+          </div>
+        </div>`;
+      });
+      faceTilesDiv.innerHTML = html;
+    }
+
+    // Format timestamp to readable format
+    function formatTimestamp(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      
+      if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      } else {
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+      }
+    }
+
+    // Reset functionality
+    resetBtn.addEventListener('click', function() {
+      location.reload();
+    });
+
+    // Drag and drop functionality
+    function setupDragAndDrop(inputId, previewId, previewImgId) {
+      const dropZone = document.querySelector(`#${inputId}`).parentElement;
+      
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => highlight(dropZone), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => unhighlight(dropZone), false);
+      });
+
+      dropZone.addEventListener('drop', (e) => handleDrop(e, inputId, previewId, previewImgId), false);
+    }
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function highlight(element) {
+      element.style.borderColor = 'var(--primary-color)';
+      element.style.background = 'var(--bg-tertiary)';
+    }
+
+    function unhighlight(element) {
+      element.style.borderColor = 'var(--border-color)';
+      element.style.background = 'var(--bg-secondary)';
+    }
+
+    function handleDrop(e, inputId, previewId, previewImgId) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      document.getElementById(inputId).files = files;
+      
+      if (files.length > 0) {
+        if (inputId === 'video-input') {
+          const url = URL.createObjectURL(files[0]);
+          videoPreview.src = url;
+          videoPreview.style.display = 'block';
+        } else if (inputId === 'ref-input') {
+          let previewHTML = '';
+          for (let i = 0; i < files.length; i++) {
+            previewHTML += `<div class="preview-item"><img src="${URL.createObjectURL(files[i])}" alt="Ref Image" style="object-fit: contain; max-height: 150px;"></div>`;
+          }
+          refPreview.innerHTML = `<div class="section-title">All Selected (${files.length})</div><div class="preview-grid">${previewHTML}</div>`;
+        }
+      }
+    }
+
+    // Setup drag and drop
+    setupDragAndDrop('video-input', 'videoPreview', 'previewVideo');
+    setupDragAndDrop('ref-input', 'refPreview', 'previewRef');
+  </script>
+
+  <style>
+    /* Face Recognition Layout Improvements */
+    .face-recognition-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1.5fr;
+      gap: 2rem;
+      height: calc(100vh - 300px);
+      min-height: 700px;
+    }
+
+    .face-recognition-panel {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      overflow-y: auto;
+    }
+
+    .center-panel {
+      max-height: calc(100vh - 350px);
+      overflow-y: auto;
+    }
+
+    .results-panel {
+      max-height: calc(100vh - 350px);
+      overflow-y: auto;
+    }
+
+    /* Enhanced Face Tiles */
+    .face-tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .face-tile {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      border: 3px solid var(--border-color);
+    }
+
+    .face-tile:hover {
+      transform: scale(1.05);
+      z-index: 10;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .face-tile.match-found {
+      border-color: var(--success-color);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    }
+
+    .face-tile img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+
+    .face-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+      color: white;
+      padding: 0.5rem;
+    }
+
+    .face-info {
+      font-size: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .face-filename {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .face-timestamp {
+      font-weight: 500;
+      color: #e0e7ff;
+      margin-bottom: 0.25rem;
+    }
+
+           .face-similarity {
+         font-weight: 600;
+         color: var(--success-color);
+       }
+       
+       .face-no-match {
+         font-weight: 600;
+         color: var(--text-light);
+       }
+
+    /* Preview grid for reference images */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .preview-item img {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border-color);
+    }
+    
+    /* Section titles */
+    .section-title {
+      background: var(--bg-secondary);
+      padding: 0.5rem 1rem;
+      margin: 1rem 0 0.5rem 0;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .face-recognition-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        height: auto;
+      }
+      
+      .face-recognition-panel {
+        order: 2;
+      }
+      
+      .face-recognition-panel:first-child {
+        order: 1;
+      }
+      
+      .face-recognition-panel:last-child {
+        order: 3;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .face-tiles-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      }
+      
+      .face-tile img {
+        height: 100px;
+      }
+    }
+  </style>
+</body>
+</html>
+
+

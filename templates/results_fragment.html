@@ -1,0 +1,30 @@
+<h3>Final Matching Results</h3>
+{% if results %}
+  <table class="results-table">
+    <tr>
+      <th>Video Filename</th>
+      <th>Time (sec)</th>
+      <th>Video Face</th>
+      <th>Reference Face</th>
+      <th>Match %</th>
+      <th>Reference Filename</th>
+    </tr>
+    {% for res in results %}
+    <tr>
+      <td>{{ res.video_filename }}</td>
+      <td>{{ res.time }}</td>
+      <td>
+        <img src="data:image/jpeg;base64,{{ res.video_face }}" alt="Video Face" width="100">
+      </td>
+      <td>
+        <img src="data:image/jpeg;base64,{{ res.ref_face }}" alt="Reference Face" width="100">
+      </td>
+      <td>{{ res.similarity }}%</td>
+      <td>{{ res.ref_filename }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <p>No matches found.</p>
+{% endif %}
+

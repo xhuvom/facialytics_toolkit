@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Comparison - CodeFormer Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-content">
+          <h1><i class="fas fa-magic"></i> CodeFormer Portal</h1>
+          <img src="{{ url_for('static', filename='images/sigmind.png') }}" alt="Sigmind Logo" class="header-logo">
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="nav-container">
+        <ul class="nav-tabs">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('landing') }}">
+              <i class="fas fa-home"></i>
+              Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'restoration' %}active{% endif %}" href="{{ url_for('index') }}">
+              <i class="fas fa-wand-magic-sparkles"></i>
+              Face Restoration
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'inpainting_drawing' %}active{% endif %}" href="{{ url_for('inpainting_drawing') }}">
+              <i class="fas fa-paintbrush"></i>
+              Inpainting/Drawing
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'comparison' %}active{% endif %}" href="{{ url_for('compare') }}">
+              <i class="fas fa-balance-scale"></i>
+              Face Comparison
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'video_enhancement' %}active{% endif %}" href="{{ url_for('video_enhancement') }}">
+              <i class="fas fa-video"></i>
+              Video Enhancement
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'face_recognition' %}active{% endif %}" href="{{ url_for('face_recognition') }}">
+              <i class="fas fa-search"></i>
+              Face Recognition
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <div class="page-header fade-in">
+          <h1 class="page-title">Face Comparison</h1>
+          <p class="page-subtitle">Compare two facial images and get similarity analysis</p>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-10 mx-auto">
+            <div class="card fade-in">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-balance-scale"></i>
+                  Compare Faces
+                </h3>
+              </div>
+              <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="comparisonForm">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="source_image" class="form-label">
+                          <i class="fas fa-user"></i>
+                          Source Image
+                        </label>
+                        <div class="form-control-file" onclick="document.getElementById('source_image').click()">
+                          <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                          <p class="mb-1">Click to upload source image</p>
+                          <p class="text-muted small">First face to compare</p>
+                          <input type="file" id="source_image" name="source_image" accept="image/*" required style="display: none;">
+                        </div>
+                        <div id="sourcePreview" class="mt-3" style="display: none;">
+                          <img id="previewSource" class="image-preview" alt="Source Preview">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="target_image" class="form-label">
+                          <i class="fas fa-user-friends"></i>
+                          Target Image
+                        </label>
+                        <div class="form-control-file" onclick="document.getElementById('target_image').click()">
+                          <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                          <p class="mb-1">Click to upload target image</p>
+                          <p class="text-muted small">Second face to compare</p>
+                          <input type="file" id="target_image" name="target_image" accept="image/*" required style="display: none;">
+                        </div>
+                        <div id="targetPreview" class="mt-3" style="display: none;">
+                          <img id="previewTarget" class="image-preview" alt="Target Preview">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                      <i class="fas fa-search"></i>
+                      Compare Faces
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {% if comparison_result %}
+            <div class="card mt-4 fade-in">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-line"></i>
+                  Comparison Results
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4 text-center">
+                    <h5>Source Image</h5>
+                    {% if comp_source %}
+                    <img src="{{ comp_source }}" alt="Source Image" class="image-preview shadow">
+                    {% endif %}
+                  </div>
+                  <div class="col-md-4 text-center">
+                    <div class="comparison-result">
+                      <div class="result-circle">
+                        <i class="fas fa-balance-scale fa-3x text-primary"></i>
+                      </div>
+                      <h4 class="mt-3">Analysis Complete</h4>
+                      <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        {{ comparison_result }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4 text-center">
+                    <h5>Target Image</h5>
+                    {% if comp_target %}
+                    <img src="{{ comp_target }}" alt="Target Image" class="image-preview shadow">
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Features Section -->
+            <div class="row mt-5">
+              <div class="col-12">
+                <h2 class="text-center mb-4">Advanced Face Comparison Features</h2>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <div class="card h-100 text-center">
+                      <div class="card-body">
+                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                        <h5>AI-Powered Analysis</h5>
+                        <p class="text-muted">Uses advanced facial recognition algorithms for accurate comparison</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <div class="card h-100 text-center">
+                      <div class="card-body">
+                        <i class="fas fa-percentage fa-3x text-secondary mb-3"></i>
+                        <h5>Similarity Score</h5>
+                        <p class="text-muted">Get precise similarity percentage with detailed analysis</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <div class="card h-100 text-center">
+                      <div class="card-body">
+                        <i class="fas fa-shield-alt fa-3x text-warning mb-3"></i>
+                        <h5>Secure Processing</h5>
+                        <p class="text-muted">Your images are processed securely and not stored permanently</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>Powered by <b>Sigmind.ai</b> | Advanced AI Face Comparison Technology</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-content">
+      <div class="loading-spinner mb-3"></div>
+      <h4>Analyzing Faces...</h4>
+      <p class="text-muted">Please wait while we compare your images</p>
+    </div>
+  </div>
+
+  <script>
+    // Image preview functionality
+    function setupImagePreview(inputId, previewId, previewImgId) {
+      document.getElementById(inputId).addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById(previewImgId).src = e.target.result;
+            document.getElementById(previewId).style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // Setup previews for both images
+    setupImagePreview('source_image', 'sourcePreview', 'previewSource');
+    setupImagePreview('target_image', 'targetPreview', 'previewTarget');
+
+    // Form submission with loading
+    document.getElementById('comparisonForm').addEventListener('submit', function() {
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    });
+
+    // Drag and drop functionality
+    function setupDragAndDrop(inputId, previewId, previewImgId) {
+      const dropZone = document.querySelector(`#${inputId}`).parentElement;
+      
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => highlight(dropZone), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => unhighlight(dropZone), false);
+      });
+
+      dropZone.addEventListener('drop', (e) => handleDrop(e, inputId, previewId, previewImgId), false);
+    }
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function highlight(element) {
+      element.style.borderColor = 'var(--primary-color)';
+      element.style.background = 'var(--bg-tertiary)';
+    }
+
+    function unhighlight(element) {
+      element.style.borderColor = 'var(--border-color)';
+      element.style.background = 'var(--bg-secondary)';
+    }
+
+    function handleDrop(e, inputId, previewId, previewImgId) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      document.getElementById(inputId).files = files;
+      
+      if (files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById(previewImgId).src = e.target.result;
+          document.getElementById(previewId).style.display = 'block';
+        };
+        reader.readAsDataURL(files[0]);
+      }
+    }
+
+    // Setup drag and drop for both images
+    setupDragAndDrop('source_image', 'sourcePreview', 'previewSource');
+    setupDragAndDrop('target_image', 'targetPreview', 'previewTarget');
+  </script>
+
+  <style>
+    .comparison-result {
+      padding: 2rem;
+    }
+    
+    .result-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      color: white;
+      box-shadow: var(--shadow-lg);
+    }
+  </style>
+</body>
+</html>
+
