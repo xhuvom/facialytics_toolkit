@@ -452,10 +452,7 @@ For issues and questions:
 - **v1.2.0**: Enhanced video processing with debug logs
 
 ### Roadmap
-- [ ] Batch processing for multiple videos
 - [ ] API endpoints for external integration
-- [ ] Mobile app companion
-- [ ] Cloud deployment support
 - [ ] Advanced face editing tools
 
 ---
